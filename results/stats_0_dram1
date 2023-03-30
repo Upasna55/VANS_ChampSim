@@ -1,0 +1,70 @@
+RMW EVENTS
+
+Eviction: 2794
+Flush Back: 0
+Local Memory Issue Fail: 0
+Next Level FULL: 0
+Next Level Issue Fail: 0
+Patch RMW: 0
+Patch RMW Comb: 0
+Read Access: 11388
+Read Cold: 2858
+Read Fast Forward: 8376
+Read Patch: 154
+ROQ FULL: 0
+Write Access: 0
+Write Comb: 0
+Write Patch: 0
+Write RMW: 0
+
+
+RMW State Durations
+
+Read Cold Pending AIT Read: 615998
+Read Cold Pending Read: 428854
+Read Cold Pending ROQ: 542160
+Read Fast-Forward Pending ROQ: 1507680
+Write Comb Pending AIT Write: 0
+Write Comb Pending Migration: 0
+Write Comb Pending Write: 0
+Write Flush Pending AIT Write: 0
+Write Flush Pending Write: 0
+Write Patch Pending AIT Write: 0
+Write Patch Pending Migration: 0
+Write Patch Pending Write: 0
+Write RMW Pending AIT Read: 0
+Write RMW Pending AIT Write: 0
+Write RMW Pending Migration: 0
+Write RMW Pending Read: 0
+Write Pending Write: 0
+
+
+AIT Events
+
+Eviction: 0
+Local Memory Read Access: 11432
+Local Memory Write Access: 0
+Local Memory Issue Fail: 0
+Migration: 0
+Read Access: 2858
+Read Hit: 2667
+Read Miss: 191
+Write Access: 0
+Write Hit: 0
+Write Miss: 0
+
+
+AIT State Durations
+
+Read Hit Pending Read DRAM: 558787
+Read Miss Pending Read DRAM: 35253
+Read Miss Pending Read Media: 19100
+Write Hit Pending Migration: 0
+Write Hit Pending Write DRAM: 0
+Write Hit Pending Write Media: 0
+Write Miss Pending Migration: 0
+Write Miss Pending Read Media: 0
+Write Miss Pending Write DRAM: 0
+Write Miss Pending Write Media: 0
+
+
