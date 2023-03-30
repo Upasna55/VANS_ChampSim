@@ -15,13 +15,14 @@
  */
 
 #include "dram_controller.h"
-
+#include <iomanip>
 #include <algorithm>
 
 #include "champsim_constants.h"
 #include "util.h"
 
 extern uint8_t all_warmup_complete;
+extern MEMORY_CONTROLLER DRAM;
 
 struct is_unscheduled {
   bool operator()(const PACKET& lhs) { return !lhs.scheduled; }
@@ -260,4 +261,78 @@ uint32_t MEMORY_CONTROLLER::get_size(uint8_t queue_type, uint64_t address)
     return get_size(1, address);
 
   return 0;
+}
+
+
+void MEMORY_CONTROLLER::printout()
+{
+    return;
+}
+
+void MEMORY_CONTROLLER::drain()
+{
+    return;
+}
+
+void MEMORY_CONTROLLER::print_stats()
+{
+  uint64_t total_congested_cycle = 0;
+  uint64_t total_congested_count = 0;
+
+  long long int dram_size = DRAM_CHANNELS * DRAM_RANKS * DRAM_BANKS * DRAM_ROWS * DRAM_COLUMNS * BLOCK_SIZE / 1024 / 1024; // in MiB
+  std::cout << "Off-chip DRAM Size: ";
+  if (dram_size > 1024)
+    std::cout << dram_size / 1024 << " GiB";
+  else
+    std::cout << dram_size << " MiB";
+  std::cout << " Channels: " << DRAM_CHANNELS << " Width: " << 8 * DRAM_CHANNEL_WIDTH << "-bit Data Rate: " << DRAM_IO_FREQ << " MT/s" << std::endl;
+
+  std::cout << std::endl;
+  std::cout << "DRAM Statistics" << std::endl;
+  for (uint32_t i = 0; i < DRAM_CHANNELS; i++) {
+    std::cout << " CHANNEL " << i << std::endl;
+
+    auto& channel = DRAM.channels[i];
+    std::cout << " RQ ROW_BUFFER_HIT: " << std::setw(10) << channel.RQ_ROW_BUFFER_HIT << " ";
+    std::cout << " ROW_BUFFER_MISS: " << std::setw(10) << channel.RQ_ROW_BUFFER_MISS;
+    std::cout << std::endl;
+
+    std::cout << " DBUS AVG_CONGESTED_CYCLE: ";
+    if (channel.dbus_count_congested)
+      std::cout << std::setw(10) << ((double)channel.dbus_cycle_congested / channel.dbus_count_congested);
+    else
+      std::cout << "-";
+    std::cout << std::endl;
+
+    std::cout << " WQ ROW_BUFFER_HIT: " << std::setw(10) << channel.WQ_ROW_BUFFER_HIT << " ";
+    std::cout << " ROW_BUFFER_MISS: " << std::setw(10) << channel.WQ_ROW_BUFFER_MISS << " ";
+    std::cout << " FULL: " << std::setw(10) << channel.WQ_FULL;
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+
+    total_congested_cycle += channel.dbus_cycle_congested;
+    total_congested_count += channel.dbus_count_congested;
+  }
+
+  if (DRAM_CHANNELS > 1) {
+    std::cout << " DBUS AVG_CONGESTED_CYCLE: ";
+    if (total_congested_count)
+      std::cout << std::setw(10) << ((double)total_congested_cycle / total_congested_count);
+    else
+      std::cout << "-";
+
+    std::cout << std::endl;
+  }
+}
+
+void MEMORY_CONTROLLER::reset_stats()
+{
+    // reset DRAM stats
+  for (uint32_t i = 0; i < DRAM_CHANNELS; i++) {
+    DRAM.channels[i].WQ_ROW_BUFFER_HIT = 0;
+    DRAM.channels[i].WQ_ROW_BUFFER_MISS = 0;
+    DRAM.channels[i].RQ_ROW_BUFFER_HIT = 0;
+    DRAM.channels[i].RQ_ROW_BUFFER_MISS = 0;
+  }
 }

@@ -32,6 +32,7 @@
 #include "operable.h"
 #include "tracereader.h"
 #include "vmem.h"
+#include "vans_wrapper.h"
 
 uint8_t warmup_complete[NUM_CPUS] = {}, simulation_complete[NUM_CPUS] = {}, all_warmup_complete = 0, all_simulation_complete = 0,
         MAX_INSTR_DESTINATIONS = NUM_INSTR_DESTINATIONS, knob_cloudsuite = 0, knob_low_bandwidth = 0;
@@ -44,6 +45,7 @@ auto start_time = time(NULL);
 champsim::deprecated_clock_cycle current_core_cycle;
 
 extern MEMORY_CONTROLLER DRAM;
+extern NVDIMM VANS;
 extern VirtualMemory vmem;
 extern std::array<O3_CPU*, NUM_CPUS> ooo_cpu;
 extern std::array<CACHE*, NUM_CACHES> caches;
@@ -196,50 +198,6 @@ void print_branch_stats()
   }
 }
 
-void print_dram_stats()
-{
-  uint64_t total_congested_cycle = 0;
-  uint64_t total_congested_count = 0;
-
-  std::cout << std::endl;
-  std::cout << "DRAM Statistics" << std::endl;
-  for (uint32_t i = 0; i < DRAM_CHANNELS; i++) {
-    std::cout << " CHANNEL " << i << std::endl;
-
-    auto& channel = DRAM.channels[i];
-    std::cout << " RQ ROW_BUFFER_HIT: " << std::setw(10) << channel.RQ_ROW_BUFFER_HIT << " ";
-    std::cout << " ROW_BUFFER_MISS: " << std::setw(10) << channel.RQ_ROW_BUFFER_MISS;
-    std::cout << std::endl;
-
-    std::cout << " DBUS AVG_CONGESTED_CYCLE: ";
-    if (channel.dbus_count_congested)
-      std::cout << std::setw(10) << ((double)channel.dbus_cycle_congested / channel.dbus_count_congested);
-    else
-      std::cout << "-";
-    std::cout << std::endl;
-
-    std::cout << " WQ ROW_BUFFER_HIT: " << std::setw(10) << channel.WQ_ROW_BUFFER_HIT << " ";
-    std::cout << " ROW_BUFFER_MISS: " << std::setw(10) << channel.WQ_ROW_BUFFER_MISS << " ";
-    std::cout << " FULL: " << std::setw(10) << channel.WQ_FULL;
-    std::cout << std::endl;
-
-    std::cout << std::endl;
-
-    total_congested_cycle += channel.dbus_cycle_congested;
-    total_congested_count += channel.dbus_count_congested;
-  }
-
-  if (DRAM_CHANNELS > 1) {
-    std::cout << " DBUS AVG_CONGESTED_CYCLE: ";
-    if (total_congested_count)
-      std::cout << std::setw(10) << ((double)total_congested_cycle / total_congested_count);
-    else
-      std::cout << "-";
-
-    std::cout << std::endl;
-  }
-}
-
 void reset_cache_stats(uint32_t cpu, CACHE* cache)
 {
   for (uint32_t i = 0; i < NUM_TYPES; i++) {
@@ -304,12 +262,11 @@ void finish_warmup()
   }
   cout << endl;
 
-  // reset DRAM stats
-  for (uint32_t i = 0; i < DRAM_CHANNELS; i++) {
-    DRAM.channels[i].WQ_ROW_BUFFER_HIT = 0;
-    DRAM.channels[i].WQ_ROW_BUFFER_MISS = 0;
-    DRAM.channels[i].RQ_ROW_BUFFER_HIT = 0;
-    DRAM.channels[i].RQ_ROW_BUFFER_MISS = 0;
+  // reset DRAM/NVDIMM stats
+  for (auto it = caches.rbegin(); it != caches.rend(); ++it) {
+    if (caches[it - caches.rbegin()]->NAME == "LLC") {
+      caches[it - caches.rbegin()]->lower_level->reset_stats();
+    }
   }
 }
 
@@ -369,14 +326,6 @@ int main(int argc, char** argv)
   cout << "Simulation Instructions: " << simulation_instructions << endl;
   cout << "Number of CPUs: " << NUM_CPUS << endl;
 
-  long long int dram_size = DRAM_CHANNELS * DRAM_RANKS * DRAM_BANKS * DRAM_ROWS * DRAM_COLUMNS * BLOCK_SIZE / 1024 / 1024; // in MiB
-  std::cout << "Off-chip DRAM Size: ";
-  if (dram_size > 1024)
-    std::cout << dram_size / 1024 << " GiB";
-  else
-    std::cout << dram_size << " MiB";
-  std::cout << " Channels: " << DRAM_CHANNELS << " Width: " << 8 * DRAM_CHANNEL_WIDTH << "-bit Data Rate: " << DRAM_IO_FREQ << " MT/s" << std::endl;
-
   std::cout << std::endl;
   std::cout << "VirtualMemory physical capacity: " << std::size(vmem.ppage_free_list) * vmem.page_size;
   std::cout << " num_ppages: " << std::size(vmem.ppage_free_list) << std::endl;
@@ -426,6 +375,11 @@ int main(int argc, char** argv)
         // for (auto c : caches)
         for (auto c : operables) {
           c->print_deadlock();
+          for (auto it = caches.rbegin(); it != caches.rend(); ++it) {
+            if (caches[it - caches.rbegin()]->NAME == "LLC") {
+              caches[it - caches.rbegin()]->lower_level->printout();
+            }
+          }
           std::cout << std::endl;
         }
 
@@ -487,6 +441,12 @@ int main(int argc, char** argv)
     }
   }
 
+  for (auto it = caches.rbegin(); it != caches.rend(); ++it) {
+    if (caches[it - caches.rbegin()]->NAME == "LLC") {
+      caches[it - caches.rbegin()]->lower_level->drain();
+    }
+  }
+
   uint64_t elapsed_second = (uint64_t)(time(NULL) - start_time), elapsed_minute = elapsed_second / 60, elapsed_hour = elapsed_minute / 60;
   elapsed_minute -= elapsed_hour * 60;
   elapsed_second -= (elapsed_hour * 3600 + elapsed_minute * 60);
@@ -520,7 +480,11 @@ int main(int argc, char** argv)
     (*it)->impl_replacement_final_stats();
 
 #ifndef CRC2_COMPILE
-  print_dram_stats();
+  for (auto it = caches.rbegin(); it != caches.rend(); ++it) {
+    if (caches[it - caches.rbegin()]->NAME == "LLC") {
+      caches[it - caches.rbegin()]->lower_level->print_stats();
+    }
+  }
   print_branch_stats();
 #endif
 

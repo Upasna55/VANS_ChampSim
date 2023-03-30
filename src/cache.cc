@@ -730,3 +730,23 @@ void CACHE::print_deadlock()
     std::cout << NAME << " MSHR empty" << std::endl;
   }
 }
+
+void CACHE::printout()
+{
+    return;
+}
+
+void CACHE::drain()
+{
+    return;
+}
+
+void CACHE::print_stats()
+{
+    return;
+}
+
+void CACHE::reset_stats()
+{
+    return;
+}

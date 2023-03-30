@@ -76,6 +76,11 @@ public:
   void return_data(PACKET* packet) override;
   void operate() override;
 
+  void printout() override;
+  void drain() override;
+  void print_stats() override;
+  void reset_stats() override;
+
   void handle_read();
   void handle_fill();
 
