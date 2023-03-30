@@ -18,6 +18,9 @@
 #define OPERABLE_H
 
 #include <iostream>
+#include <string>
+
+using namespace std;
 
 namespace champsim
 {
@@ -26,11 +29,17 @@ class operable
 {
 public:
   const double CLOCK_SCALE;
+  string config_filename;
 
   double leap_operation = 0;
   uint64_t current_cycle = 0;
 
+  explicit operable(string config_filename, double scale) 
+  : config_filename(config_filename),
+    CLOCK_SCALE(scale - 1) {}
+    
   explicit operable(double scale) : CLOCK_SCALE(scale - 1) {}
+
 
   void _operate()
   {

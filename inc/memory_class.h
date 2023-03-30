@@ -61,6 +61,11 @@ public:
   virtual uint32_t get_occupancy(uint8_t queue_type, uint64_t address) = 0;
   virtual uint32_t get_size(uint8_t queue_type, uint64_t address) = 0;
 
+  virtual void printout() = 0;
+  virtual void drain() = 0;
+  virtual void print_stats() = 0;
+  virtual void reset_stats() = 0;
+
   explicit MemoryRequestConsumer(unsigned fill_level) : fill_level(fill_level) {}
 };
 

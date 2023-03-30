@@ -272,3 +272,23 @@ void PageTableWalker::print_deadlock()
     std::cout << NAME << " MSHR empty" << std::endl;
   }
 }
+
+void PageTableWalker::printout()
+{
+    return;
+}
+
+void PageTableWalker::drain()
+{
+    return;
+}
+
+void PageTableWalker::print_stats()
+{
+    return;
+}
+
+void PageTableWalker::reset_stats()
+{
+    return;
+}

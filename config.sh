@@ -700,7 +700,7 @@ with open('Makefile', 'wt') as wfp:
     wfp.write('CC := ' + config_file.get('CC', 'gcc') + '\n')
     wfp.write('CXX := ' + config_file.get('CXX', 'g++') + '\n')
     wfp.write('CFLAGS := ' + config_file.get('CFLAGS', '-Wall -O3') + ' -std=gnu99\n')
-    wfp.write('CXXFLAGS := ' + config_file.get('CXXFLAGS', '-Wall -O3') + ' -std=c++17\n')
+    wfp.write('CXXFLAGS := ' + config_file.get('CXXFLAGS', '-Wall -O3 -g') + ' -std=c++17\n')
     wfp.write('CPPFLAGS := ' + config_file.get('CPPFLAGS', '') + ' -Iinc -MMD -MP\n')
     wfp.write('LDFLAGS := ' + config_file.get('LDFLAGS', '') + '\n')
     wfp.write('LDLIBS := ' + config_file.get('LDLIBS', '') + '\n')
@@ -730,4 +730,5 @@ with open('Makefile', 'wt') as wfp:
 # Configuration cache
 with open(config_cache_name, 'wt') as wfp:
     json.dump(libfilenames, wfp)
+
 

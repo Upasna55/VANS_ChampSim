@@ -83,6 +83,11 @@ public:
   int add_pq(PACKET* packet) override;
 
   void operate() override;
+  
+  void printout() override;
+  void drain() override;
+  void print_stats() override;
+  void reset_stats() override;
 
   uint32_t get_occupancy(uint8_t queue_type, uint64_t address) override;
   uint32_t get_size(uint8_t queue_type, uint64_t address) override;
